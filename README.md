@@ -1,8 +1,5 @@
 # .xy to .x00 Converter v1.1.0
 Copyright Aaron Wang 2023-7-26 
-Contact: 
-    email: wang_aaron_@hotmail.com
-    Github: https://github.com/drasimov
 
 This tool copies information from .xy files to .x00 files for use in X'Pert Epitaxy software in analyzing results of x-ray crystallography. 
 
