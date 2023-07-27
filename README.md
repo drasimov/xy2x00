@@ -16,6 +16,7 @@ The converter-redist.zip file will contain all the necessary files, simply copy 
 Uses gcc compiler, so requires the following dlls:
 - libgcc_s_dw2-1.dll
 - libstdc++-6.dll
+
 These are included in the folder.
 
 ### Notes:
