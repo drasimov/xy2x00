@@ -1,5 +1,5 @@
 /*!
- * .xy to .x00 Converter v1.0.0
+ * .xy to .x00 Converter v1.2.0
  * Copyright Aaron Wang 2023-7-26
  * 
  * Contact: 
@@ -20,18 +20,14 @@ using namespace std;
  * Using Windows API, method prints out last time file was edited, used to
  * print out the "FileDateTime" in the .x00 file
  * 
- * Code obtained from Documentation: 
+ * Code references Documentation: 
  * https://learn.microsoft.com/en-us/windows/win32/sysinfo/retrieving-the-last-write-time
  */
-BOOL GetLastWriteTime(HANDLE hFile, LPTSTR lpszString, DWORD dwSize)
+string GetLastWriteTime(HANDLE hFile, LPTSTR lpszString, DWORD dwSize)
 {
     FILETIME ftCreate, ftAccess, ftWrite;
     SYSTEMTIME stUTC, stLocal;
     DWORD dwRet;
-
-    // Retrieve the file times for the file.
-    if (!GetFileTime(hFile, &ftCreate, &ftAccess, &ftWrite))
-        return FALSE;
 
     // Convert the last-write time to local time.
     FileTimeToSystemTime(&ftWrite, &stUTC);
@@ -41,11 +37,7 @@ BOOL GetLastWriteTime(HANDLE hFile, LPTSTR lpszString, DWORD dwSize)
     stringstream ss;
     ss << stLocal.wDay << "-" << stLocal.wMonth << "-" << stLocal.wYear << "," << stLocal.wHour << ":" << stLocal.wMinute;
     string timeString = ss.str();
-    cout << timeString;
-
-    if( S_OK == dwRet )
-        return TRUE;
-    else return FALSE;
+    return timeString;
 }
 
 /* 
@@ -72,54 +64,53 @@ int main ( int argc, char *argv[] )
 				hFile = CreateFile((LPCSTR)argv[i], GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 				
 				// adds two blank lines to the end of the .xy file
-				ofstream out(inputFile.c_str(), ios::app);
-				out << "\n\n";
+				ofstream fapp(inputFile.c_str(), ios::app);
+				fapp << "\n\n";
+				fapp.close();
 				
 				// sets up read/write from the .xy file into a .x00 with the same name
-				FILE * fin = freopen(inputFile.c_str(), "r", stdin);
+				ifstream fin(inputFile.c_str());
 				inputFile = inputFile.substr(0, inputFile.find_last_of("."));
-				FILE * fout = freopen((inputFile + ".x00").c_str(), "w", stdout);
+				ofstream fout((inputFile + ".x00").c_str());
 				inputFile = inputFile.substr(inputFile.find_last_of("\\")+1);
 
 				// read and stores the contents of the .xy as a list (vector) of pairs of numbers
 				vector<pair<double, double>> rows;
 				pair<double, double> ir;
-				while(!cin.eof()){
-					cin >> ir.first >> ir.second;
+				while(!fin.eof()){
+					fin >> ir.first >> ir.second;
 					rows.push_back(ir);
 				}
-				fclose(fin);
+				fin.close();
 
 				// prints the header for the .x00, see README for the format
-				cout << "HR-XRDScan\n";
-				cout << "FileName, " << inputFile.substr(inputFile.find_last_of("\\")+1) + ".x00\n";
-				cout << "FileDateTime, ";
-				GetLastWriteTime(hFile, szBuf, MAX_PATH);
-				cout << "\n";
-				cout << "Sample, " << inputFile.substr(0, inputFile.find("__")) + "\n";
-				cout << "Reflection, 0 0 4\n";
-				cout << "Wavelength, 1.5405980\n";
-				cout << "GenkVmA, 45, 40\n";
+				fout << "HR-XRDScan\n";
+				fout << "FileName, " << inputFile.substr(inputFile.find_last_of("\\")+1) + ".x00\n";
+				fout << "FileDateTime, " << GetLastWriteTime(hFile, szBuf, MAX_PATH) << "\n";
+				fout << "Sample, " << inputFile.substr(0, inputFile.find("__")) + "\n";
+				fout << "Reflection, 0 0 4\n";
+				fout << "Wavelength, 1.5405980\n";
+				fout << "GenkVmA, 45, 40\n";
 				double omega = (rows[0].first+ir.first)/2;
-				cout << "Omega, " << omega << "\n";
-				cout << "TwoTheta, " << omega*2 << "\n";
-				cout << "X, 0.00\nY, 0.00\nPhi, 0.000\nPsi, 0.000\n";
-				cout << "ScanType, CONTINUOUS\n";
-				cout << "ScanAxis, Omega/2Theta\n";
-				cout << "FirstAngle, " << rows[0].first << "\n";
-				cout << "ScanRange, " << ir.first - rows[0].first << "\n";
-				cout << "StepWidth, " << rows[1].first - rows[0].first << "\n";
-				cout << "TimePerStep, 0.500\n";
-				cout << "NrOfData, " << rows.size()-1 << "\n";
-				cout << "ScanData\n";
+				fout << "Omega, " << omega << "\n";
+				fout << "TwoTheta, " << omega*2 << "\n";
+				fout << "X, 0.00\nY, 0.00\nPhi, 0.000\nPsi, 0.000\n";
+				fout << "ScanType, CONTINUOUS\n";
+				fout << "ScanAxis, Omega/2Theta\n";
+				fout << "FirstAngle, " << rows[0].first << "\n";
+				fout << "ScanRange, " << ir.first - rows[0].first << "\n";
+				fout << "StepWidth, " << rows[1].first - rows[0].first << "\n";
+				fout << "TimePerStep, 0.500\n";
+				fout << "NrOfData, " << rows.size()-1 << "\n";
+				fout << "ScanData\n";
 
 				// prints the intensity data out to 14 decimal points precision
 				for(int i=0; i<rows.size()-1; i++){
-					cout << fixed;
-					cout << setprecision(14);
-					cout << rows[i].second << "\n";
+					fout << fixed;
+					fout << setprecision(14);
+					fout << rows[i].second << "\n";
 				}
-				fclose(fout);
+				fout.close();
 			}
 		}
 	}
